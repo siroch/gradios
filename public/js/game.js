@@ -244,7 +244,7 @@ var Game = {
         sfx_enemy_die.play();
 
         //  Increase the score
-        score += 20;
+        score += 20*lives.countLiving();
         scoreText.text = scoreString + score;
 
         //  And create an explosion :)
@@ -254,8 +254,7 @@ var Game = {
         /*setTimeout(function() { explosion.kill(); }, 750);*/
 
         if (aliens.countLiving() == 0) {
-            score += 1000;
-            this.finishGame();
+            createAliens();
         }
     },
 
@@ -280,7 +279,7 @@ var Game = {
         explosion.reset(player.body.x, player.body.y);
         explosion.play('kaboom', 30, false, true);
     
-        // í”Œë ˆì´ì–´ê°€ ì£½ê±°ë‚˜ ì ì´ ë‹¤ ì£½ì„ ë•Œ
+        // ?”Œ? ˆ?´?–´ê°? ì£½ê±°?‚˜ ? ?´ ?‹¤ ì£½ì„ ?•Œ
         if ((lives.countLiving() < 1) || (aliens.countLiving() == 0)) {
             this.finishGame();
         }
