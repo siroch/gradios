@@ -26,6 +26,7 @@ var stage = 1;
 var stageString = '';
 var stageText;
 var sfx_stage_clear;
+var easyPause;
 
 var Game = {
 
@@ -45,6 +46,8 @@ var Game = {
         game.load.audio('sfx_fire', 'audio/fire.wav');
         game.load.audio('sfx_player_hit', 'audio/player-hit.wav');
         game.load.audio('sfx_stage_clear', 'audio/stage-clear.wav');
+        // load the pause icon
+        game.load.image('pausebutton','img/pausebutton.png');        
     },
 
     create  : function() {
@@ -117,15 +120,19 @@ var Game = {
         aliens.enableBody = true;
         aliens.physicsBodyType = Phaser.Physics.ARCADE;
 
+        // the pause button
+        game.add.button(0,0,'pausebutton', this.pauseGame, this);
+        easyPause = game.input.keyboard.addKey(Phaser.Keyboard.ESC);
+
         // The stage
         stageString = 'Stage: ';
-        stageText = game.add.text(10, 10, stageString + stage, { font: '40px Arial', fill: '#fff' });
+        stageText = game.add.text(70, 10, stageString + stage, { font: '40px Arial', fill: '#fff' });
 
         this.createAliens();
     
         //  The score
         scoreString = 'Score: ';
-        scoreText = game.add.text(200, 10, scoreString + score, { font: '40px Arial', fill: '#fff' });
+        scoreText = game.add.text(250, 10, scoreString + score, { font: '40px Arial', fill: '#fff' });
     
         //  Lives
         lives = game.add.group();
@@ -159,6 +166,11 @@ var Game = {
 
         //  Scroll the background
         starfield.tilePosition.x -= 3;
+
+        // Pause the game with an alert
+        if (easyPause.isDown){
+            this.pauseGame();
+        }
 
         if (player.alive) {
             //  Reset the player, then check for movement keys
@@ -212,7 +224,7 @@ var Game = {
 
     createAliens : function() {
 
-        for (var i = 0; i < 15; i++) {
+        for (var i = 0; i < stage*3; i++) {
             var alien = aliens.create(Math.random() * 290, Math.random() * 540, 'invader');
             alien.anchor.setTo(0.5, 0.5);
             alien.animations.add('fly', [ 0, 1, 2, 3 ], 20, true);
@@ -294,6 +306,8 @@ var Game = {
             countstage++;
             stage++;
             stageText.text = stageString + stage;
+			player.invincibleTime = game.time.now + 1000;
+			game.add.tween(player).to( { alpha : 0.2 }, 250, Phaser.Easing.Linear.None, true, 0, 1, true);
             
         }
     },
@@ -415,6 +429,10 @@ var Game = {
     resetBullet : function(bullet) {
         //  Called if the bullet goes out of the screen
         bullet.kill();
+    },
+
+    pauseGame : function(){
+        alert('Click OK to resume')
     },
 
 }
