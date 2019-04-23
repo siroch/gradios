@@ -30,6 +30,8 @@ var easyPause;
 var speedup;
 var player_speed;
 var item_count=0;
+var power_up_count = 1;
+var power_up;
 var Game = {
 
     preload : function() {
@@ -43,7 +45,9 @@ var Game = {
         game.load.spritesheet('kaboom', 'img/explode.png', 128, 128);
         game.load.image('starfield', 'img/starfield.png');
         game.load.image('heart', 'img/heart.png');
+        game.load.image('power_up','img/power_up.png');
         game.load.image('upper_mountain', 'img/upper_mountain.png');
+        game.load.image('lower_mountain', 'img/lower_mountain.png');
         // load all sfx and music
         game.load.audio('music1', 'audio/gradius.mp3');
         game.load.audio('sfx_enemy_die', 'audio/enemy-die.wav');
@@ -68,6 +72,7 @@ var Game = {
         stage = 1;
         player_speed = 200;
         stageString = '';
+        power_up_count = 1;
 
         game.physics.startSystem(Phaser.Physics.ARCADE);
 
@@ -91,6 +96,7 @@ var Game = {
         //  The scrolling starfield background
         starfield = game.add.tileSprite(0, 0, 900, 600, 'starfield');
         upper_mountain = game.add.tileSprite(0, 0, 900, 30, 'upper_mountain');
+        lower_mountain = game.add.tileSprite(0, 500, 900, 0, 'lower_mountain');
 
         //  The starship
         player = game.add.sprite(150, 300, 'ship');
@@ -150,6 +156,12 @@ var Game = {
         heart.enableBody = true;
         heart.physicsBodyType = Phaser.Physics.ARCADE;
 
+        // power_up
+        power_up = game.add.group();
+        power_up.enableBody = true;
+        power_up.physicsBodyType = Phaser.Physics.ARCADE;
+
+
         //speedup
         speedup = game.add.group();
         speedup.enableBody = true;
@@ -179,6 +191,7 @@ var Game = {
         //  Scroll the background
         starfield.tilePosition.x -= 3;
         upper_mountain.tilePosition.x -= 1;
+        lower_mountain.tilePosition.x -= 1;
 
         // Pause the game with an alert
         if (easyPause.isDown){
@@ -225,7 +238,9 @@ var Game = {
             var random = Math.random() * 1000;
             if(random < 2){
                 var heart_1 = heart.create(game.width, Math.random() * 475 + 70,'heart');
-                heart_1.body.gravity.x = - (stage*100 + 100);
+                heart_1.body.velocity.setTo(200,200);
+                heart_1.body.collideWorldBounds = true;
+                heart_1.body.bounce.set(1);
             }
 
             //speedUp
@@ -243,7 +258,18 @@ var Game = {
             game.physics.arcade.overlap(player, aliens, this.enemyHitsPlayer, null, this);
             game.physics.arcade.overlap(player, enemyBullets, this.enemyHitsPlayer, null, this);
             game.physics.arcade.overlap(player, heart, this.getHeart, null, this);
+            game.physics.arcade.overlap(player, power_up, this.getPower_up, null, this);
             game.physics.arcade.overlap(player, speedup, this.getSpeedup, null, this);
+        }
+    },
+    create_Power_up : function(){
+        //Power_up
+        var random = Math.random() * 1000;
+        if(random < 30){
+            var power = power_up.create(game.width, Math.random() * 475 + 70,'power_up');
+            power.body.velocity.setTo(200,200);
+            power.body.collideWorldBounds = true;
+            power.body.bounce.set(1);
         }
     },
 
@@ -291,15 +317,18 @@ var Game = {
 
         //  To avoid them being allowed to fire too fast we set a time limit
         if (game.time.now > bulletTime) {
-            //  Grab the first bullet we can from the pool
-            bullet = bullets.getFirstExists(false);
 
-            if (bullet) {
-                sfx_fire.play();
-                //  And fire it
-                bullet.reset(player.x+8, player.y);
-                bullet.body.velocity.x = 400;
-                bulletTime = game.time.now + 200;
+            //  Grab the first bullet we can from the pool
+            for(var n = power_up_count;n>0;n--){
+                bullet = bullets.getFirstExists(false);
+
+                if (bullet) {
+                    sfx_fire.play();
+                    //  And fire it
+                    bullet.reset(player.x+8, player.y+Math.pow(-1,n)*7*n);
+                    bullet.body.velocity.x = 400;
+                    bulletTime = game.time.now + 200;
+                }
             }
         }
     },
@@ -308,6 +337,8 @@ var Game = {
         //  When a bullet hits an alien we kill them both
         bullet.kill();
         alien.kill();
+
+        this.create_Power_up();
 
         game.add.audio('sfx_enemy_die');
         sfx_enemy_die.volume = 0.6;
@@ -371,7 +402,7 @@ var Game = {
         explosion.reset(player.body.x, player.body.y);
         explosion.play('kaboom', 30, false, true);
 
-        // ?��?��?��?���? 죽거?�� ?��?�� ?�� 죽을 ?��
+        
         if (lives.countLiving() < 1) {
             countstage = 1;
             this.finishGame();
@@ -406,6 +437,12 @@ var Game = {
             ship.alpha = 0.4;
             live_count++;
         }
+    },
+
+    getPower_up: function(player, power_up){
+        power_up.kill();
+        power_up_count++;
+        if(power_up_count > 5) power_up_count = 5;
     },
 
     finishGame : function() {
